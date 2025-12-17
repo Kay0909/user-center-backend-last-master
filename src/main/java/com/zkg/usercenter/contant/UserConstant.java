@@ -24,4 +24,28 @@ public interface UserConstant {
      */
     int ADMIN_ROLE = 1;
 
+    
+    /**
+     * 默认未删除状态: 0
+     */
+    int DEFAULT_DELETE_STATUS = 0;
+
+
+    /**
+     * 删除状态：1  已删除
+     */
+    int DEL_DELETE_STATUS = 1;
+
+        
+    /**
+     * 默认未禁用状态: 0 未禁用
+     */
+    int DEFAULT_DISABLE_STATUS = 0;
+
+
+    /**
+     * 禁用状态：1  禁用
+     */
+    int DISABLE_STATUS = 1;
+
 }

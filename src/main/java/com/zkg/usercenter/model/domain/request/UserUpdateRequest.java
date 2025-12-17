@@ -1,13 +1,12 @@
 package com.zkg.usercenter.model.domain.request;
 
-import com.baomidou.mybatisplus.annotation.TableLogic;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Data;
-
 import java.io.Serializable;
+import javax.validation.constraints.NotBlank;
 
 /**
- * 用户注册请求体
+ * 用户更新请求体
  *
  */
 @Data
@@ -18,21 +17,15 @@ public class UserUpdateRequest implements Serializable {
     /**
      * id
      */
+    @NotBlank(message = "用户id不能为空")
     @Schema(description = "id")
     private Long id;
-
-    /**
-     * 账号
-     */
-    @Schema(description = "账号")
-    private String userAccount;
 
     /**
      * 用户昵称
      */
     @Schema(description = "用户昵称")
     private String username;
-
 
     /**
      * 用户头像
@@ -58,22 +51,4 @@ public class UserUpdateRequest implements Serializable {
     @Schema(description = "邮箱")
     private String email;
 
-    /**
-     * 状态 0 - 正常
-     */
-    @Schema(description = "状态 0 - 正常")
-    private Integer userStatus;
-
-    /**
-     * 是否删除
-     */
-    @TableLogic
-    @Schema(description = "是否删除")
-    private Integer isDelete;
-
-    /**
-     * 用户角色 0 - 普通用户 1 - 管理员
-     */
-    @Schema(description = "用户角色 0 - 普通用户 1 - 管理员")
-    private Integer userRole;
 }

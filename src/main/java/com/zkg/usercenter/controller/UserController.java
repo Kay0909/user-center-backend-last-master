@@ -1,28 +1,24 @@
 package com.zkg.usercenter.controller;
 
-import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.zkg.usercenter.common.BaseResponse;
 import com.zkg.usercenter.common.ErrorCode;
+import com.zkg.usercenter.common.PageResponse;
 import com.zkg.usercenter.common.ResultUtils;
 import com.zkg.usercenter.exception.BusinessException;
 import com.zkg.usercenter.model.domain.User;
 import com.zkg.usercenter.model.domain.request.UserLoginRequest;
+import com.zkg.usercenter.model.domain.request.UserPageQueryRequest;
 import com.zkg.usercenter.model.domain.request.UserRegisterRequest;
 import com.zkg.usercenter.model.domain.request.UserUpdateRequest;
 import com.zkg.usercenter.service.RequestToEntity;
 import com.zkg.usercenter.service.UserService;
-import com.zkg.usercenter.utils.UniqueIdentifierGenerator;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.Schema;
-import org.apache.commons.lang3.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import javax.annotation.Resource;
 import javax.servlet.http.HttpServletRequest;
 import java.util.List;
-import java.util.stream.Collectors;
-
-import static com.zkg.usercenter.contant.UserConstant.ADMIN_ROLE;
-import static com.zkg.usercenter.contant.UserConstant.USER_LOGIN_STATE;
 
 /**
  * 用户接口
@@ -31,7 +27,6 @@ import static com.zkg.usercenter.contant.UserConstant.USER_LOGIN_STATE;
 @RequestMapping("/user")
 public class UserController {
 
-
     @Resource
     private UserService userService;
 
@@ -39,24 +34,31 @@ public class UserController {
     private RequestToEntity requestToEntity;
 
     /**
+     * 分页查询用户
+     *
+     * @param request   HttpServletRequest
+     * @param pageQuery 分页查询请求体
+     * @return 用户分页结果
+     */
+    @Operation(summary = "分页查询用户", description = "根据分页参数查询用户列表")
+    @PostMapping("/page")
+    public PageResponse<User> searchUserByPage(
+            @RequestBody @Schema(description = "分页查询请求体") UserPageQueryRequest pageQuery,
+            HttpServletRequest request) {
+        return userService.searchUserByPage(pageQuery, request);
+    }
+
+    /**
      * 用户注册
      *
-     * @param userRegisterRequest
-     * @return
+     * @param userRegisterRequest 用户注册请求体
+     * @return 响应结果
      */
+    @Operation(summary = "用户注册", description = "用户进行注册，返回新用户ID")
     @PostMapping("/register")
-    public BaseResponse<Long> userRegister(@RequestBody @Schema(description = "注册请求体") UserRegisterRequest userRegisterRequest) {
-        // 校验
-        if (userRegisterRequest == null) {
-            throw new BusinessException(ErrorCode.NULL_ERROR, "请求参数为空");
-        }
-        String userAccount = userRegisterRequest.getUserAccount();
-        String userPassword = userRegisterRequest.getUserPassword();
-        String checkPassword = userRegisterRequest.getCheckPassword();
-        if (StringUtils.isAnyBlank(userAccount, userPassword, checkPassword)) {
-            throw new BusinessException(ErrorCode.NULL_ERROR, "请求参数为空");
-        }
-        long result = userService.userRegister(userAccount, userPassword, checkPassword);
+    public BaseResponse<Long> userRegister(
+            @RequestBody @Schema(description = "注册请求体") UserRegisterRequest userRegisterRequest) {
+        long result = userService.userRegister(userRegisterRequest);
         return ResultUtils.success(result);
     }
 
@@ -67,26 +69,21 @@ public class UserController {
      * @param request
      * @return
      */
+    @Operation(summary = "用户登录", description = "用户进行登录操作")
     @PostMapping("/login")
-    public BaseResponse<User> userLogin(@RequestBody @Schema(description = "登录请求体") UserLoginRequest userLoginRequest, HttpServletRequest request) {
-        if (userLoginRequest == null) {
-            throw new BusinessException(ErrorCode.NULL_ERROR, "请求参数为空");
-        }
-        String userAccount = userLoginRequest.getUserAccount();
-        String userPassword = userLoginRequest.getUserPassword();
-        if (StringUtils.isAnyBlank(userAccount, userPassword)) {
-            throw new BusinessException(ErrorCode.NULL_ERROR, "请求参数为空");
-        }
-        User user = userService.userLogin(userAccount, userPassword, request);
+    public BaseResponse<User> userLogin(@RequestBody @Schema(description = "登录请求体") UserLoginRequest userLoginRequest,
+                                        HttpServletRequest request) {
+        User user = userService.userLogin(userLoginRequest, request);
         return ResultUtils.success(user);
     }
 
     /**
-     * 用户注销
+     * 用户注销（退出登录）
      *
-     * @param request
+     * @param request 请求
      * @return
      */
+    @Operation(summary = "用户注销", description = "用户退出登录操作")
     @PostMapping("/logout")
     public BaseResponse<Integer> userLogout(HttpServletRequest request) {
         if (request == null) {
@@ -96,95 +93,60 @@ public class UserController {
         return ResultUtils.success(result);
     }
 
-
     /**
      * 根据用户账号查询
      *
      * @param userAccount 用户账号
-     * @param request
-     * @return
+     * @param request     请求
+     * @return 用户信息列表
      */
+    @Operation(summary = "查询用户", description = "根据用户账号查询用户信息列表")
     @GetMapping("/search")
-    public BaseResponse<List<User>> searchUsers(@Schema(description = "用户账号") String userAccount, HttpServletRequest request) {
-        if (!isAdmin(request)) {
-            throw new BusinessException(ErrorCode.NO_AUTH, "缺少管理员权限");
-        }
-        QueryWrapper<User> queryWrapper = new QueryWrapper<>();
-        if (StringUtils.isNotBlank(userAccount)) {
-            queryWrapper.like("userAccount", userAccount);
-        }
-        List<User> userList = userService.list(queryWrapper);
-        List<User> list = userList.stream().map(user -> userService.getSafetyUser(user)).collect(Collectors.toList());
+    public BaseResponse<List<User>> searchUser(@Schema(description = "用户账号") String userAccount,
+                                               HttpServletRequest request) {
+        List<User> list = userService.searchUser(userAccount, request);
         return ResultUtils.success(list);
     }
 
+    /**
+     * 根据用户id删除用户
+     *
+     * @param id      用户id
+     * @param request 请求
+     * @return 响应结果
+     */
+    @Operation(summary = "删除用户", description = "根据用户id删除用户")
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteUser(@RequestBody @Schema(description = "该条数据id") Long id, HttpServletRequest request) {
-        if (!isAdmin(request)) {
-            throw new BusinessException(ErrorCode.NO_AUTH);
-        }
-        if (id <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        boolean b = userService.removeById(id);
+    public BaseResponse<Boolean> deleteUser(@RequestBody @Schema(description = "该条数据id") Long id,
+                                            HttpServletRequest request) {
+        boolean b = userService.deleteUser(id, request);
         return ResultUtils.success(b);
     }
 
     /**
      * 获取当前用户
      *
-     * @param request
-     * @return
+     * @param request 请求
+     * @return 响应结果
      */
+    @Operation(summary = "获取当前用户", description = "获取当前登录用户信息")
     @GetMapping("/current")
     public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        User currentUser = (User) userObj;
-        if (currentUser == null) {
-            throw new BusinessException(ErrorCode.NOT_LOGIN);
-        }
-        long userId = currentUser.getId();
-        // TODO 校验用户是否合法
-        User user = userService.getById(userId);
-        User safetyUser = userService.getSafetyUser(user);
-        return ResultUtils.success(safetyUser);
-    }
-
-
-    /**
-     * 是否为管理员
-     *
-     * @param request
-     * @return
-     */
-    private boolean isAdmin(HttpServletRequest request) {
-        // 仅管理员可查询
-        Object userObj = request.getSession().getAttribute(USER_LOGIN_STATE);
-        User user = (User) userObj;
-        return user != null && user.getUserRole() == ADMIN_ROLE;
+        User user = userService.getCurrentUser(request);
+        return ResultUtils.success(user);
     }
 
     /**
      * 根据id更新用户信息
      *
-     * @param userUpdateRequest
-     * @param request
-     * @return
+     * @param userUpdateRequest 更新请求体
+     * @return 响应结果
      */
+    @Operation(summary = "更新用户信息", description = "根据id更新用户详细信息")
     @PostMapping("/update")
-    public BaseResponse<User> userUpdate(@RequestBody @Schema(description = "更新请求体") UserUpdateRequest userUpdateRequest, HttpServletRequest request) {
-        if (!isAdmin(request)) {
-            throw new BusinessException(ErrorCode.NO_AUTH);
-        }
-        if (userUpdateRequest == null) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        if (userUpdateRequest.getId() <= 0) {
-            throw new BusinessException(ErrorCode.PARAMS_ERROR);
-        }
-        User requestToUser = requestToEntity.UpdateRequestToUser(userUpdateRequest);
-        User user = userService.userUpdateById(requestToUser);
-        return ResultUtils.success(user);
+    public BaseResponse<Boolean> userUpdate(
+            @RequestBody @Schema(description = "更新请求体") UserUpdateRequest userUpdateRequest) {
+        return ResultUtils.success(userService.updateUserById(userUpdateRequest));
     }
 
 }

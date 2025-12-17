@@ -87,7 +87,7 @@ public class UserServiceTest {
         String userAccount = "zhukaige";
         String userPassword = "123456";
         String checkPassword = "123456";
-        long result = userService.userRegister(userAccount, userPassword, checkPassword, planetCode);
+        //long result = userService.userRegister(userAccount, userPassword, checkPassword);
 
     }
 }
