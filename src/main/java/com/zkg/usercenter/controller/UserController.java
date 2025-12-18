@@ -13,6 +13,7 @@ import com.zkg.usercenter.model.domain.request.UserUpdateRequest;
 import com.zkg.usercenter.service.RequestToEntity;
 import com.zkg.usercenter.service.UserService;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Schema;
 import org.springframework.web.bind.annotation.*;
 
@@ -43,8 +44,9 @@ public class UserController {
     @Operation(summary = "分页查询用户", description = "根据分页参数查询用户列表")
     @PostMapping("/page")
     public PageResponse<User> searchUserByPage(
-            @RequestBody @Schema(description = "分页查询请求体") UserPageQueryRequest pageQuery,
-            HttpServletRequest request) {
+            @Parameter(description = "分页查询请求体", required = true)
+            @RequestBody UserPageQueryRequest pageQuery,
+            @Parameter(hidden = true) HttpServletRequest request) {
         return userService.searchUserByPage(pageQuery, request);
     }
 
@@ -57,7 +59,8 @@ public class UserController {
     @Operation(summary = "用户注册", description = "用户进行注册，返回新用户ID")
     @PostMapping("/register")
     public BaseResponse<Long> userRegister(
-            @RequestBody @Schema(description = "注册请求体") UserRegisterRequest userRegisterRequest) {
+            @Parameter(description = "注册请求体", required = true)
+            @RequestBody UserRegisterRequest userRegisterRequest) {
         long result = userService.userRegister(userRegisterRequest);
         return ResultUtils.success(result);
     }
@@ -65,14 +68,16 @@ public class UserController {
     /**
      * 用户登录
      *
-     * @param userLoginRequest
-     * @param request
+     * @param userLoginRequest 登录请求体
+     * @param request HttpServletRequest
      * @return
      */
     @Operation(summary = "用户登录", description = "用户进行登录操作")
     @PostMapping("/login")
-    public BaseResponse<User> userLogin(@RequestBody @Schema(description = "登录请求体") UserLoginRequest userLoginRequest,
-                                        HttpServletRequest request) {
+    public BaseResponse<User> userLogin(
+            @Parameter(description = "登录请求体", required = true)
+            @RequestBody UserLoginRequest userLoginRequest,
+            @Parameter(hidden = true) HttpServletRequest request) {
         User user = userService.userLogin(userLoginRequest, request);
         return ResultUtils.success(user);
     }
@@ -85,7 +90,8 @@ public class UserController {
      */
     @Operation(summary = "用户注销", description = "用户退出登录操作")
     @PostMapping("/logout")
-    public BaseResponse<Integer> userLogout(HttpServletRequest request) {
+    public BaseResponse<Integer> userLogout(
+            @Parameter(hidden = true) HttpServletRequest request) {
         if (request == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
@@ -102,8 +108,10 @@ public class UserController {
      */
     @Operation(summary = "查询用户", description = "根据用户账号查询用户信息列表")
     @GetMapping("/search")
-    public BaseResponse<List<User>> searchUser(@Schema(description = "用户账号") String userAccount,
-                                               HttpServletRequest request) {
+    public BaseResponse<List<User>> searchUser(
+            @Parameter(description = "用户账号", required = true)
+            @RequestParam String userAccount,
+            @Parameter(hidden = true) HttpServletRequest request) {
         List<User> list = userService.searchUser(userAccount, request);
         return ResultUtils.success(list);
     }
@@ -117,8 +125,10 @@ public class UserController {
      */
     @Operation(summary = "删除用户", description = "根据用户id删除用户")
     @PostMapping("/delete")
-    public BaseResponse<Boolean> deleteUser(@RequestBody @Schema(description = "该条数据id") Long id,
-                                            HttpServletRequest request) {
+    public BaseResponse<Boolean> deleteUser(
+            @Parameter(description = "该条数据id", required = true)
+            @RequestBody Long id,
+            @Parameter(hidden = true) HttpServletRequest request) {
         boolean b = userService.deleteUser(id, request);
         return ResultUtils.success(b);
     }
@@ -131,7 +141,8 @@ public class UserController {
      */
     @Operation(summary = "获取当前用户", description = "获取当前登录用户信息")
     @GetMapping("/current")
-    public BaseResponse<User> getCurrentUser(HttpServletRequest request) {
+    public BaseResponse<User> getCurrentUser(
+            @Parameter(hidden = true) HttpServletRequest request) {
         User user = userService.getCurrentUser(request);
         return ResultUtils.success(user);
     }
@@ -145,7 +156,8 @@ public class UserController {
     @Operation(summary = "更新用户信息", description = "根据id更新用户详细信息")
     @PostMapping("/update")
     public BaseResponse<Boolean> userUpdate(
-            @RequestBody @Schema(description = "更新请求体") UserUpdateRequest userUpdateRequest) {
+            @Parameter(description = "更新请求体", required = true)
+            @RequestBody UserUpdateRequest userUpdateRequest) {
         return ResultUtils.success(userService.updateUserById(userUpdateRequest));
     }
 
